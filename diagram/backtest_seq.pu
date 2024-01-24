@@ -1,0 +1,74 @@
+@startuml bot
+participant StrategyExecutor as executor
+participant MLTrader as trader
+participant Strategy as strategy
+participant BacktestingBroker as backtester
+participant Broker as broker
+participant YahooData as yahoo
+participant Order as order
+executor -> executor: _on_trading_iteration()
+activate executor
+executor -> trader : on_trading_iteration()
+activate trader 
+trader -> trader: position_sizing()
+activate trader
+trader-> strategy: get_last_price()
+activate strategy
+strategy -> broker: get_last_price()
+activate broker
+broker -> yahoo: get_last_price()
+activate yahoo
+yahoo -> yahoo: get_historical_prices()
+yahoo -> broker: return last price
+deactivate yahoo
+broker -> strategy: return last price
+deactivate broker
+strategy -> trader: return last prices
+deactivate strategy
+deactivate trader
+trader -> strategy: create_order()
+activate strategy
+strategy -> order: Order()
+activate order
+order -> strategy: return Order()
+deactivate order
+strategy -> trader: return Order()
+deactivate strategy
+trader -> strategy: submit_order()
+activate strategy
+strategy -> backtester: __getattribute__()
+activate backtester
+backtester -> strategy: return new_func
+deactivate backtester
+strategy -> backtester: new_func(order,...)
+activate backtester
+backtester  -> backtester : submit_order(order)
+backtester -> order : update_raw(order)
+activate order
+order -> backtester : return order
+deactivate order
+backtester -> broker: _new_orders.append(order)
+activate broker
+broker --> backtester
+deactivate broker
+backtester --> strategy
+deactivate backtester
+strategy --> trader
+deactivate strategy
+trader --> executor
+deactivate trader
+executor -> executor: process_queue()
+activate executor
+executor -> executor: process_event(order)
+activate executor
+executor -> executor: _on_new_order(order)
+activate executor
+executor -> strategy: on_new_order(order)
+strategy --> executor
+executor --> executor
+deactivate executor
+executor --> executor
+deactivate executor
+executor --> executor
+deactivate executor
+@enduml 
